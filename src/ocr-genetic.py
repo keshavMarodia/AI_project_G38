@@ -1,100 +1,66 @@
+import numpy as np
+import PIL.Image
+import pytesseract
 import random
 
-# Define the problem
-# In this example, we'll use pixel values to represent genes
-# and accuracy as the fitness function
-class OCRProblem:
-    def __init__(self, images, labels):
-        self.images = images
-        self.labels = labels
+# Define the input image filename and population size
+input_image_filename = r'line4.jpeg'
+population_size = 50
 
-    def evaluate_fitness(self, solution):
-        accuracy = 0
-        for i in range(len(self.images)):
-            if recognize_character(self.images[i], solution) == self.labels[i]:
-                accuracy += 1
-        return accuracy / len(self.images)
+# Load the input image as a NumPy array
+input_image = np.array(PIL.Image.open(input_image_filename))
 
-# Helper function to recognize a character from an image using a solution
-def recognize_character(image, solution):
-    # This function is left undefined, as it will depend on the specific OCR algorithm being used
-    pass
+# Define the OCR fitness function
+def fitness(individual):
+    ocr_text = pytesseract.image_to_string(PIL.Image.fromarray(individual))
+    fitness_score = sum([1 for c in ocr_text if c.isalpha() or c.isdigit() or c.isspace()])/len(ocr_text)
+    return fitness_score
 
-# Load data
-# In this example, we'll assume the data is stored in separate arrays of images and labels
-training_images = [...] # List of training images
-training_labels = [...] # List of training labels
-test_images = [...] # List of test images
-test_labels = [...] # List of test labels
+# Define the genetic algorithm functions
+def generate_individual():
+    return np.random.randint(low=0, high=256, size=input_image.shape, dtype=np.uint8)
 
-# Generate an initial population
-population_size = 100
-gene_length = 784 # 28x28 image
-population = []
-for i in range(population_size):
-    solution = []
-    for j in range(gene_length):
-        solution.append(random.randint(0, 255))
-    population.append(solution)
+def crossover(parent1, parent2):
+    child = np.zeros_like(parent1)
+    mask = np.random.randint(low=0, high=2, size=parent1.shape, dtype=bool)
+    child[mask] = parent1[mask]
+    child[~mask] = parent2[~mask]
+    return child
 
-# Genetic algorithm loop
-problem = OCRProblem(training_images, training_labels)
-max_generations = 100
-mutation_rate = 0.01
-for generation in range(max_generations):
-    # Evaluate fitness
-    fitness_scores = []
-    for solution in population:
-        fitness_scores.append(problem.evaluate_fitness(solution))
+def mutate(individual):
+    mutation_rate = 0.1
+    mutation_mask = np.random.random(size=individual.shape) < mutation_rate
+    mutation = np.random.randint(low=-50, high=50, size=individual.shape, dtype=np.int8)
+    individual[mutation_mask] = np.clip(individual[mutation_mask] + mutation[mutation_mask], 0, 255)
+    return individual
 
-    # Select parents
-    parents = []
-    for i in range(10):
-        max_fitness_index = fitness_scores.index(max(fitness_scores))
-        parents.append(population[max_fitness_index])
-        fitness_scores[max_fitness_index] = -1
+# Generate the initial population
+population = [generate_individual() for _ in range(population_size)]
 
-    # Generate offspring
+# Run the genetic algorithm for 100 generations
+for generation in range(100):
+    # Evaluate the fitness of each individual in the population
+    fitness_scores = [fitness(individual) for individual in population]
+    
+    # Select the top 10% of the population as parents
+    num_parents = int(population_size * 0.1)
+    parents_indices = np.argsort(fitness_scores)[-num_parents:]
+    parents = [population[i] for i in parents_indices]
+    
+    # Generate the next generation using crossover and mutation
     offspring = []
-    for i in range(population_size):
-        parent1 = random.choice(parents)
-        parent2 = random.choice(parents)
-        child = []
-        for j in range(gene_length):
-            if random.random() < 0.5:
-                child.append(parent1[j])
-            else:
-                child.append(parent2[j])
-            if random.random() < mutation_rate:
-                child[j] = random.randint(0, 255)
+    while len(offspring) < population_size - num_parents:
+        parent1, parent2 = random.sample(parents, 2)
+        child = crossover(parent1, parent2)
+        child = mutate(child)
         offspring.append(child)
+    population = parents + offspring
 
-    # Evaluate offspring fitness
-    offspring_fitness_scores = []
-    for solution in offspring:
-        offspring_fitness_scores.append(problem.evaluate_fitness(solution))
+# Evaluate the fitness of the final population and select the best individual
+fitness_scores = [fitness(individual) for individual in population]
+best_individual_index = np.argmax(fitness_scores)
+best_individual = population[best_individual_index]
 
-    # Replace the old population with the new population
-    population = []
-    for i in range(population_size):
-        if random.random() < 0.5:
-            index = fitness_scores.index(max(fitness_scores))
-            population.append(population[index])
-            fitness_scores[index] = -1
-        else:
-            index = offspring_fitness_scores.index(max(offspring_fitness_scores))
-            population.append(offspring[index])
-            offspring_fitness_scores[index] = -1
-
-    # Output best solution
-    best_index = fitness_scores.index(max(fitness_scores))
-    best_solution = population[best_index]
-    best_fitness = fitness_scores[best_index]
-    print("Generation", generation, "Best fitness", best_fitness)
-
-# Use best solution to recognize characters in test set
-for i in range(len(test_images)):
-    recognized_character = recognize_character(test_images[i], best_solution)
-test_problem = OCRProblem(test_images, test_labels)
-test_accuracy = test_problem.evaluate_fitness(best_solution)
-print("Test set accuracy:", test_accuracy)
+# Perform OCR on the best individual and print the result
+ocr_text = pytesseract.image_to_string(PIL.Image.fromarray(best_individual))
+print("OCR result: ", ocr_text)

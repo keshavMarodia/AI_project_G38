@@ -14,6 +14,10 @@ from model import Model, DecoderType
 from preprocessor import Preprocessor
 import tkinter as tk
 from tkinter.filedialog import asksaveasfilename, askopenfilename
+from ocrBFS import bfs_main
+from ocrDFS import dfs_main
+from ocrASTAR import astar_main
+
 
 app= Flask(__name__)
 CORS(app)
@@ -215,8 +219,20 @@ def main():
     root = tk.Tk()
     # root.withdraw()
     img_file = askopenfilename()
+    
     values = infer(model, img_file)
-    return json.dumps(values)
+    value_astar = astar_main(img_file)
+    value_bfs = bfs_main(img_file)
+    value_dfs = dfs_main(img_file)
+    print(value_astar,value_bfs,value_dfs)
+    result = {
+        'values': values,
+        'value_astar': value_astar,
+        'value_bfs': value_bfs,
+        'value_dfs': value_dfs
+    }
+    
+    return json.dumps(result)
 
 @app.route('/fetch_values', methods=['GET'])
 def start():
