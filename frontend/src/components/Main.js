@@ -7,6 +7,7 @@ const Main = (props) => {
   const [astar, setAstar] = useState("");
   const [bfs, setBfs] = useState("");
   const [dfs, setDfs] = useState("");
+  const [ga,setGa]=useState("");
 
   const dataCapture = () => {
     fetch("http://127.0.0.1:5000/fetch_values")
@@ -18,7 +19,7 @@ const Main = (props) => {
         setAstar(data["value_astar"]);
         setBfs(data["value_bfs"]);
         setDfs(data["value_dfs"]);
-
+        setGa(data["value_ga"]);
       })
       .catch((error) => console.log(error));
     return;
@@ -43,6 +44,7 @@ const Main = (props) => {
         <label className="label">text astar : {astar}</label>
         <label className="label">text bfs : {bfs}</label>
         <label className="label">text dfs : {dfs}</label>
+        <label className="label">text GA : {ga}</label>
         <button className="button" onClick={dataCapture}>Fetch Data</button>
       </div>
     </div>
