@@ -2,7 +2,7 @@
     color: white;
 }
 body{
-    background-image: url("C:\medAi\htr tf2\SimpleHTR\frontend\public\5040007.jpg");
+    background-image: url("/home/abhijay/Desktop/Code/AI/github/AI_project_G38/frontend/public/5040007.jpg");
 }
 .container {
   display: flex;

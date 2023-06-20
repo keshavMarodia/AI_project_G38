@@ -17,6 +17,7 @@ from tkinter.filedialog import asksaveasfilename, askopenfilename
 from ocrBFS import bfs_main
 from ocrDFS import dfs_main
 from ocrASTAR import astar_main
+from GA_test import ocr_ga
 
 
 app= Flask(__name__)
@@ -224,12 +225,14 @@ def main():
     value_astar = astar_main(img_file)
     value_bfs = bfs_main(img_file)
     value_dfs = dfs_main(img_file)
+    value_ga = ocr_ga(img_file)
     print(value_astar,value_bfs,value_dfs)
     result = {
         'values': values,
         'value_astar': value_astar,
         'value_bfs': value_bfs,
-        'value_dfs': value_dfs
+        'value_dfs': value_dfs,
+        'value_ga' : value_ga
     }
     
     return json.dumps(result)
